@@ -6,5 +6,5 @@ docker-compose.yml
 docker-compose.yml.*
 www/*
 logs/*
-services/vova_beackend/*
+services/vova_beackend/www/
 data/*
