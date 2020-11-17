@@ -1,0 +1,96 @@
+version: "3"
+services:
+  vova_nginx:
+    build:
+      context: ./services/nginx
+      args:
+        NGINX_VERSION: ${NGINX_VERSION}
+        CONTAINER_PACKAGE_URL: ${CONTAINER_PACKAGE_URL}
+        NGINX_INSTALL_APPS: ${NGINX_INSTALL_APPS}
+    container_name: vova_nginx
+    ports:
+      - "${NGINX_HTTP_HOST_PORT}:80"
+      - "5000:5000"
+      - "${NGINX_HTTPS_HOST_PORT}:443"
+    volumes:
+      - ./services/vova_front/www:/www:rw
+      - ${NGINX_SSL_CERTIFICATE_DIR}:/ssl:rw
+      - ${NGINX_CONFD_DIR}:/etc/nginx/conf.d/:rw
+      - ${NGINX_CONF_FILE}:/etc/nginx/nginx.conf:ro
+      - ${NGINX_LOG_DIR}:/var/log/nginx/:rw
+    depends_on:
+      - vova_backend
+    links:
+      - vova_backend
+    environment:
+      TZ: "$TZ"
+    networks:
+      - default
+
+  vova_backend:
+    build:
+      context: ./services/vova_beackend
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION}
+        CONTAINER_PACKAGE_URL: ${CONTAINER_PACKAGE_URL}
+        TZ: "$TZ"
+    container_name: vova_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/vova_beackend/www:/www:rw
+      - ${BACKEND_LOG_DIR}:/logs/:rw
+    depends_on:
+      - vova_mysql
+      - vova_redis
+    links:
+      - vova_mysql
+      - vova_redis
+    networks:
+      - default
+
+  vova_front:
+    tty: true
+    build:
+      context: ./services/vova_front
+      args:
+        TZ: "$TZ"
+    container_name: vova_front
+    volumes:
+      - ./services/vova_front/www:/www:rw
+    networks:
+      - default
+
+  vova_mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: vova_mysql
+    ports:
+      - "${MYSQL_HOST_PORT}:3306"
+    volumes:
+      - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
+      - ${DATA_DIR}/mysql:/var/lib/mysql/:rw
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      TZ: "$TZ"
+
+
+  vova_redis:
+    image: redis:${REDIS_VERSION}
+    container_name: redis
+    ports:
+      - "${REDIS_HOST_PORT}:6379"
+    volumes:
+      - ${REDIS_CONF_FILE}:/etc/redis.conf:ro
+      - ${DATA_DIR}/redis:/data/:rw
+    restart: always
+    entrypoint: ["redis-server", "/etc/redis.conf"]
+    environment:
+      TZ: "$TZ"
+    networks:
+      - default
+
+
+networks:
+  default:
