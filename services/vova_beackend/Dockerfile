@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r /www/requirements.txt
 COPY ./supervisor /etc/supervisor
 run mkdir -p  /logs/supervisor
 
-CMD [ "/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf" ]
+CMD [ "supervisord", "-c", "/etc/supervisor/supervisord.conf" ]
